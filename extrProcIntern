@@ -1,0 +1,43 @@
+#!/usr/bin/env perl
+# (C) 2016 Frank Thomas (postproc@inside-tec.de)
+# Licence: MIT license (see LICENSE.txt)
+
+use strict;
+my $phase=0;
+print <<EOF ;
+#ifndef PROCINTERN_H_
+#define PROCINTERN_H_
+struct sqladts;
+typedef struct sqladts sqladts;
+struct sqltdss;
+typedef struct sqltdss sqltdss;
+EOF
+while(<>) {
+    if ($phase==0 && /^struct sqlcxp/) {
+	print;
+	$phase=1;
+    } elsif ($phase == 1) {
+	print; 
+	if (m"^}") {$phase=2}
+    } elsif ($phase==2 && /^static struct sqlexd /) {
+	$phase=3;
+	print "struct sqlexd {\n";
+    } elsif ($phase == 3) {
+	if (m"^}") {
+	    print "};\n";
+	    $phase=4;
+	} else {
+	    print;
+	}
+    } elsif ($phase == 4 && /^extern void sqlcxt/) {
+	print;
+	$phase=m/;/?6:5;
+    } elsif ($phase==5) {
+	print;
+	$phase=m/;/?6:5;
+    }
+}
+die if ($phase != 6);
+print <<EOF ;
+#endif /* PROCINTERN_H_ */
+EOF

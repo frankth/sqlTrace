@@ -1,0 +1,24 @@
+#!/usr/bin/env perl
+# (C) 2016 Frank Thomas (postproc@inside-tec.de)
+# Licence: MIT license (see LICENSE.txt)
+#
+use strict;
+my ($in,$out)=@ARGV;
+open(IN,"<$in") || die;
+open(OUT,">$out") || die;
+my $useStmt=0;
+my $included=0;
+while(<IN>) {
+    if ( /sqlcud0/ && !$included) {
+	print OUT "#include \"sqlTraceIntern.h\"\n";
+	$included=1;
+    }
+
+    if ( /^\s*sqlstm.stmt\s*=/) {$useStmt=1;}
+    if( m/^\s*sqlcxt\((.*)\);/) {
+	print OUT "{static sqlTraceInfo_t sqlTraceInfo ; sqlTraceSqlCxt($1,",($useStmt?"sqlstm.stmt":"NULL"),",&sqlTraceInfo);}\n";
+	$useStmt=0;
+	next;
+    }
+    print OUT;
+}

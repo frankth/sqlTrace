@@ -1,0 +1,57 @@
+#include <stdio.h>
+#include <string.h>
+#include <stdlib.h>
+#include <sqlca.h>
+
+void sql_error(void)
+{
+    char err_msg[512];
+    size_t buf_len, msg_len;
+
+    EXEC SQL WHENEVER SQLERROR CONTINUE;
+
+    buf_len = sizeof (err_msg);
+    sqlglm(err_msg, &buf_len, &msg_len);
+    fprintf(stderr,"%.*s\n", msg_len, err_msg);
+
+    EXEC SQL ROLLBACK RELEASE;
+    exit(1);
+}
+
+int main(int argc,char **argv)
+{
+    char *connect;
+    if (argc!=2) {
+	fprintf(stderr,"Usage:%s <oracle-connect-string>\n");
+	exit(1);
+    }
+    connect=argv[1];
+
+    EXEC SQL WHENEVER SQLERROR DO sql_error();
+
+    EXEC SQL CONNECT :connect;
+
+    printf("\nConnected to ORACLE");
+
+    for (;;)
+    {
+	char buffer[32];
+	int res;
+        
+        printf("\nEnter enter number (0 to quit): ");
+        fgets(buffer,sizeof(buffer),stdin);
+	buffer[strcspn(buffer, "\n")] = 0;
+	if (buffer[0]=='r') {sqlTraceResetStat();continue;}
+        if (atoi(buffer) == 0) break;
+
+        EXEC SQL SELECT 1 into :res from dual where 1=:buffer;
+
+        if (sqlca.sqlcode==0) {printf("res=%d\n",res);}
+	else {printf("SQLCODE=%d\n",sqlca.sqlcode);}
+    }
+
+/* Disconnect from ORACLE. */
+    EXEC SQL ROLLBACK WORK RELEASE;
+    exit(0);
+}
+

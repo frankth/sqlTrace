@@ -30,3 +30,7 @@
 
 # Debug files
 *.dSYM/
+
+#Project files
+sample
+procIntern.h
